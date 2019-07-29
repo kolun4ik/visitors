@@ -1,6 +1,7 @@
 import requests
 import codecs
 from bs4 import BeautifulSoup as BS
+from time import sleep
 
 
 jobs = []
@@ -26,29 +27,40 @@ if request.status_code == 200:
         for page in pages:
             urls.append(domain + page.a['href'])
 
-# if request.status_code == 200:
-#     bs = BS(request.content, 'html.parser')
-#     div_list = bs.find_all('div', attrs={'class': 'job-link'})
-#     for div in div_list:
-#         title = div.find('h2')
-#         href = domain + title.a['href']
-#         intro = div.p.text
-#         company = 'No name'
-#         logo = div.find('img')
-#
-#         if logo:
-#             company = logo['alt']
-#
-#         jobs.append(
-#             {
-#                 'href': domain + href,
-#                 'title': title.text,
-#                 'intro': intro,
-#                 'company': company
-#             }
-#         )
+for url in urls:
+    sleep(2)
+    request = session.get(url, headers=headers)
+    if request.status_code == 200:
+        bs = BS(request.content, 'html.parser')
+        div_list = bs.find_all('div', attrs={'class': 'job-link'})
+
+        for div in div_list:
+            title = div.find('h2')
+            href = domain + title.a['href']
+            intro = div.p.text
+            company = 'No name'
+            logo = div.find('img')
+
+            if logo:
+                company = logo['alt']
+
+            jobs.append(
+                {'href': domain + href,
+                 'title': title.text,
+                 'intro': intro,
+                 'company': company})
 # data = bs.prettify()
 
-handle = codecs.open('urls.html', 'w', encoding='utf-8')
-handle.write(str(urls))
+template = '<!doctype html><html lang="en"><head><meta charset="utf-8"></head><body>'
+content = '<h2> Work.ua</h2>'
+end = '</body></html>'
+
+for job in jobs:
+    content += '<a href="{href}" target="_blank">{title}</a><br/><p>{intro}</p><p>{company}</p><br/>'.format(**job)
+    content +=  '<hr/><br/><br/>'
+
+data = template + content + end
+
+handle = codecs.open('jobs.html', 'w', encoding='utf-8')
+handle.write(str(data))
 handle.close()
